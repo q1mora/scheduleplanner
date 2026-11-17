@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DayBlock — Simple Schedule Planner</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #0f766e;
+      --primary-hover: #115e59;
+      --danger: #dc2626;
+      --work: #e0f2fe;
+      --work-text: #0369a1;
+      --personal: #fef3c7;
+      --personal-text: #b45309;
+      --focus: #ede9fe;
+      --focus-text: #6d28d9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2.5rem 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 720px;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      padding: 2rem;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-top: 0.2rem;
+    }
+
+    .date-picker-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    input[type="date"],
+    input[type="time"],
+    input[type="text"],
+    select {
+      padding: 0.65rem 0.85rem;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-size: 0.9rem;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--primary);
+    }
+
+    .schedule-form {
+      display: grid;
+      grid-template-columns: 120px 120px 1fr 130px auto;
+      gap: 0.6rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .add-btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 0 1.15rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .add-btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .clear-day-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      text-decoration: underline;
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+
+    .clear-day-btn:hover {
+      color: var(--danger);
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .block {
+      display: grid;
+      grid-template-columns: 145px 1fr auto;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: #fff;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .block:hover {
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+    }
+
+    .block.done {
+      opacity: 0.6;
+      background: #f8fafc;
+    }
+
+    .block.done .block-title {
+      text-decoration: line-through;
+    }
+
+    .time-range {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .block-info {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .block-title {
+      font-size: 0.96rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge.Work {
+      background: var(--work);
+      color: var(--work-text);
+    }
+
+    .badge.Personal {
+      background: var(--personal);
+      color: var(--personal-text);
+    }
+
+    .badge.Focus {
+      background: var(--focus);
+      color: var(--focus-text);
+    }
+
+    .block-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 0.3rem 0.55rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .icon-btn.del:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+      border: 1.5px dashed var(--border);
+      border-radius: 12px;
+    }
+
+    @media (max-width: 680px) {
+      .schedule-form {
+        grid-template-columns: 1fr 1fr;
+      }
+      .schedule-form input[type="text"] {
+        grid-column: 1 / -1;
+      }
+      .block {
+        grid-template-columns: 1fr;
+        gap: 0.45rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>DayBlock Planner</h1>
+        <p class="subtitle">Plan your daily timeline — saved automatically in your browser.</p>
+      </div>
+      <div class="date-picker-wrap">
+        <input type="date" id="date-picker" aria-label="Select date" />
+      </div>
+    </header>
+
+    <form class="schedule-form" id="schedule-form">
+      <input type="time" id="start-time" value="09:00" required aria-label="Start time" />
+      <input type="time" id="end-time" value="10:00" required aria-label="End time" />
+      <input type="text" id="event-title" placeholder="Event or time block..." required />
+      <select id="event-category" aria-label="Category">
+        <option value="Work">Work</option>
+        <option value="Focus">Focus</option>
+        <option value="Personal">Personal</option>
+      </select>
+      <button type="submit" class="add-btn">Add</button>
+    </form>
+
+    <div class="toolbar">
+      <span id="summary-text">0 blocks scheduled</span>
+      <button class="clear-day-btn" id="clear-day">Clear day</button>
+    </div>
+
+    <div class="timeline" id="timeline"></div>
+  </div>
+
+  <script>
+    const datePicker = document.getElementById("date-picker");
+    const form = document.getElementById("schedule-form");
+    const startTimeInput = document.getElementById("start-time");
+    const endTimeInput = document.getElementById("end-time");
+    const titleInput = document.getElementById("event-title");
+    const categoryInput = document.getElementById("event-category");
+    const timeline = document.getElementById("timeline");
+    const summaryText = document.getElementById("summary-text");
+    const clearDayBtn = document.getElementById("clear-day");
+
+    // Default to today's local date (YYYY-MM-DD)
+    const today = new Date();
+    const localISO = new Date(today.getTime() - today.getTimezoneOffset() * 60000)
+      .toISOString()
+      .split("T")[0];
+    datePicker.value = localISO;
+
+    let scheduleData = JSON.parse(localStorage.getItem("dayblock_schedule")) || {
+      [localISO]: [
+        { id: 1, start: "09:00", end: "10:30", title: "Deep Work & Project Planning", category: "Focus", done: false },
+        { id: 2, start: "11:00", end: "11:45", title: "Team Sync & Review", category: "Work", done: false },
+        { id: 3, start: "13:00", end: "14:00", title: "Lunch & Walk Outside", category: "Personal", done: false }
+      ]
+    };
+
+    function saveData() {
+      localStorage.setItem("dayblock_schedule", JSON.stringify(scheduleData));
+    }
+
+    function formatTime(time24) {
+      const [h, m] = time24.split(":").map(Number);
+      const suffix = h >= 12 ? "PM" : "AM";
+      const hour12 = h % 12 || 12;
+      return `${hour12}:${String(m).padStart(2, "0")} ${suffix}`;
+    }
+
+    function render() {
+      const selectedDate = datePicker.value;
+      const items = (scheduleData[selectedDate] || []).sort((a, b) =>
+        a.start.localeCompare(b.start)
+      );
+
+      timeline.innerHTML = "";
+
+      if (items.length === 0) {
+        timeline.innerHTML = `<div class="empty-state">No time blocks scheduled for this date. Add one above to get started.</div>`;
+      } else {
+        items.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = `block${item.done ? " done" : ""}`;
+          div.innerHTML = `
+            <div class="time-range">${formatTime(item.start)} – ${formatTime(item.end)}</div>
+            <div class="block-info">
+              <span class="badge ${item.category}">${item.category}</span>
+              <span class="block-title" onclick="toggleBlock(${item.id})"></span>
+            </div>
+            <div class="block-actions">
+              <button class="icon-btn" onclick="toggleBlock(${item.id})">${item.done ? "Undo" : "Done"}</button>
+              <button class="icon-btn del" onclick="deleteBlock(${item.id})" aria-label="Delete">✕</button>
+            </div>
+          `;
+          div.querySelector(".block-title").textContent = item.title;
+          timeline.appendChild(div);
+        });
+      }
+
+      const completedCount = items.filter((i) => i.done).length;
+      summaryText.textContent = `${items.length} block${items.length === 1 ? "" : "s"} scheduled (${completedCount} completed)`;
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const selectedDate = datePicker.value;
+      const title = titleInput.value.trim();
+      if (!title) return;
+
+      if (!scheduleData[selectedDate]) {
+        scheduleData[selectedDate] = [];
+      }
+
+      scheduleData[selectedDate].push({
+        id: Date.now(),
+        start: startTimeInput.value,
+        end: endTimeInput.value,
+        title,
+        category: categoryInput.value,
+        done: false
+      });
+
+      titleInput.value = "";
+      saveData();
+      render();
+    });
+
+    window.toggleBlock = (id) => {
+      const selectedDate = datePicker.value;
+      scheduleData[selectedDate] = (scheduleData[selectedDate] || []).map((item) =>
+        item.id === id ? { ...item, done: !item.done } : item
+      );
+      saveData();
+      render();
+    };
+
+    window.deleteBlock = (id) => {
+      const selectedDate = datePicker.value;
+      scheduleData[selectedDate] = (scheduleData[selectedDate] || []).filter(
+        (item) => item.id !== id
+      );
+      saveData();
+      render();
+    };
+
+    clearDayBtn.addEventListener("click", () => {
+      const selectedDate = datePicker.value;
+      if (!scheduleData[selectedDate] || scheduleData[selectedDate].length === 0) return;
+      scheduleData[selectedDate] = [];
+      saveData();
+      render();
+    });
+
+    datePicker.addEventListener("change", render);
+
+    render();
+  </script>
+</body>
+</html>
